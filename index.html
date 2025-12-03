@@ -45,6 +45,22 @@
       box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
       border: 1px solid rgba(75, 85, 99, 0.4);
       backdrop-filter: blur(24px);
+      overflow: hidden;
+    }
+
+    .card > * { position: relative; z-index: 1; }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius);
+      background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.08), transparent 35%),
+                  radial-gradient(circle at 80% 0%, rgba(34, 197, 94, 0.08), transparent 30%);
+      pointer-events: none;
+      opacity: 0.6;
+      animation: panelGlow 10s ease-in-out infinite;
+      z-index: 0;
     }
 
     h1 {
@@ -232,6 +248,19 @@
       align-items: center;
       gap: 14px;
       position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(2, 6, 23, 0.8);
+    }
+
+    .bomb-panel::before {
+      content: "";
+      position: absolute;
+      inset: -20%;
+      background: radial-gradient(circle at 30% 30%, rgba(56, 189, 248, 0.12), transparent 35%),
+                  radial-gradient(circle at 70% 70%, rgba(250, 204, 21, 0.08), transparent 40%);
+      filter: blur(30px);
+      animation: panelShimmer 14s linear infinite;
+      pointer-events: none;
     }
 
     .bomb-wrapper {
@@ -255,22 +284,37 @@
       top: 50%;
       transform: translate(-50%, -50%);
       transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      animation: bombFloat 4s ease-in-out infinite;
     }
 
     .bomb.ticking {
       box-shadow: 0 0 24px rgba(56, 189, 248, 0.7);
+      animation: bombPulse 1.2s ease-in-out infinite, bombFloat 3s ease-in-out infinite;
     }
 
     .bomb.exploding {
       background: radial-gradient(circle at 30% 30%, #b91c1c, #020617 80%);
       box-shadow: 0 0 60px rgba(248, 113, 113, 0.95);
       transform: translate(-50%, -50%) scale(1.05);
+      animation: bombShake 0.35s linear infinite;
+    }
+
+    .bomb.critical {
+      animation: bombPulse 0.6s ease-in-out infinite, bombShake 0.4s linear infinite;
+      background: radial-gradient(circle at 40% 30%, #1f2937, #111827 70%);
     }
 
     .bomb-timer {
       font-size: 2rem;
       font-weight: 700;
       color: #f9fafb;
+      text-shadow: 0 0 10px rgba(248, 113, 113, 0.4);
+      transition: transform 0.2s ease, text-shadow 0.2s ease;
+    }
+
+    .bomb-timer.flash {
+      transform: scale(1.12);
+      text-shadow: 0 0 16px rgba(248, 113, 113, 0.7);
     }
 
     .fuse {
@@ -284,6 +328,7 @@
       transform-origin: left center;
       transform: translateX(-10%) rotate(-20deg);
       box-shadow: 0 0 10px rgba(250, 204, 21, 0.7);
+      animation: fusePulse 1.8s ease-in-out infinite;
     }
 
     .spark {
@@ -294,13 +339,46 @@
       background: radial-gradient(circle, #f97316, rgba(248, 113, 113, 0));
       top: 4px;
       right: -6px;
-      animation: spark 0.4s infinite alternate;
+      animation: spark 0.3s infinite alternate;
       pointer-events: none;
     }
 
     @keyframes spark {
       from { transform: scale(0.7); opacity: 0.7; }
       to   { transform: scale(1.1); opacity: 1; }
+    }
+
+    @keyframes bombFloat {
+      0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+      50% { transform: translate(-50%, -50%) translateY(-6px); }
+    }
+
+    @keyframes bombPulse {
+      0%, 100% { box-shadow: 0 0 24px rgba(56, 189, 248, 0.5); }
+      50% { box-shadow: 0 0 32px rgba(248, 113, 113, 0.8); }
+    }
+
+    @keyframes bombShake {
+      0%, 100% { transform: translate(-50%, -50%) translateX(0); }
+      25% { transform: translate(-50%, -50%) translateX(-2px); }
+      50% { transform: translate(-50%, -50%) translateX(2px); }
+      75% { transform: translate(-50%, -50%) translateX(-3px); }
+    }
+
+    @keyframes fusePulse {
+      0%, 100% { opacity: 0.8; box-shadow: 0 0 10px rgba(250, 204, 21, 0.6); }
+      50% { opacity: 1; box-shadow: 0 0 18px rgba(250, 204, 21, 0.9); }
+    }
+
+    @keyframes panelShimmer {
+      0% { transform: rotate(0deg) scale(1); opacity: 0.7; }
+      50% { transform: rotate(180deg) scale(1.05); opacity: 1; }
+      100% { transform: rotate(360deg) scale(1); opacity: 0.7; }
+    }
+
+    @keyframes panelGlow {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.9; }
     }
 
     .question {
@@ -436,6 +514,13 @@
           <option value="60">60</option>
         </select>
 
+        <label style="margin-top:8px;" id="label-difficulty">Zorluk</label>
+        <select id="difficulty-level">
+          <option value="normal" selected>Normal</option>
+          <option value="hard">Zor</option>
+          <option value="very_hard">Çok Zor</option>
+        </select>
+
         <button id="create-game-btn" style="margin-top:12px;">
           <span id="btn-create-text">Oyun Oluştur</span> <span>➕</span>
         </button>
@@ -476,6 +561,10 @@
           <div style="margin-top:4px;font-size:0.8rem;">
             <span id="room-link-label">Link:</span>
             <a id="room-link" class="link" href="#" style="color:var(--accent);word-break:break-all;"></a>
+          </div>
+          <div style="margin-top:4px;font-size:0.8rem;">
+            <span id="room-difficulty-label">Zorluk:</span>
+            <strong id="room-difficulty">-</strong>
           </div>
         </div>
         <div class="col">
@@ -545,6 +634,7 @@
       joinSectionTitle: "Koda / Linke Göre Katıl",
       labelCreatorName: "İsmin",
       labelTimeLimit: "Süre (saniye)",
+      labelDifficulty: "Zorluk",
       labelJoinName: "İsmin",
       labelJoinCode: "Oda Kodu",
       btnCreate: "Oyun Oluştur",
@@ -553,6 +643,7 @@
       roomSectionTitle: "Oda",
       roomCodeLabel: "Oda kodu:",
       roomLinkLabel: "Link:",
+      roomDifficultyLabel: "Zorluk:",
       playersSectionTitle: "Oyuncular",
       bombSectionTitle: "Bomba & Soru",
       statusWaiting: "Oyun henüz başlamadı. Oyuncular katılabilir.",
@@ -579,6 +670,9 @@
       deadTag: "Patladı",
       hostTag: "Kurucu",
       statusTurnPreparing: "Sıra bilgisi yükleniyor...",
+      difficultyNormal: "Normal",
+      difficultyHard: "Zor",
+      difficultyVeryHard: "Çok Zor",
     },
     en: {
       title: "Math Bomb",
@@ -587,6 +681,7 @@
       joinSectionTitle: "Join with Code / Link",
       labelCreatorName: "Your name",
       labelTimeLimit: "Time (seconds)",
+      labelDifficulty: "Difficulty",
       labelJoinName: "Your name",
       labelJoinCode: "Room Code",
       btnCreate: "Create Game",
@@ -595,6 +690,7 @@
       roomSectionTitle: "Room",
       roomCodeLabel: "Room code:",
       roomLinkLabel: "Link:",
+      roomDifficultyLabel: "Difficulty:",
       playersSectionTitle: "Players",
       bombSectionTitle: "Bomb & Question",
       statusWaiting: "Game has not started yet. Players can still join.",
@@ -621,6 +717,9 @@
       deadTag: "Boom",
       hostTag: "Host",
       statusTurnPreparing: "Turn info loading...",
+      difficultyNormal: "Normal",
+      difficultyHard: "Hard",
+      difficultyVeryHard: "Very Hard",
     }
   };
 
@@ -632,6 +731,7 @@
     document.getElementById("join-section-title").textContent = t.joinSectionTitle;
     document.getElementById("label-creator-name").textContent = t.labelCreatorName;
     document.getElementById("label-time-limit").textContent = t.labelTimeLimit;
+    document.getElementById("label-difficulty").textContent = t.labelDifficulty;
     document.getElementById("label-join-name").textContent = t.labelJoinName;
     document.getElementById("label-join-code").textContent = t.labelJoinCode;
     document.getElementById("btn-create-text").textContent = t.btnCreate;
@@ -640,10 +740,16 @@
     document.getElementById("room-section-title").textContent = t.roomSectionTitle;
     document.getElementById("room-code-label").textContent = t.roomCodeLabel;
     document.getElementById("room-link-label").textContent = t.roomLinkLabel;
+    document.getElementById("room-difficulty-label").textContent = t.roomDifficultyLabel;
     document.getElementById("players-section-title").textContent = t.playersSectionTitle;
     document.getElementById("bomb-section-title").textContent = t.bombSectionTitle;
     document.getElementById("btn-submit-text").textContent = t.btnSubmit;
     document.getElementById("scoreboard-title").textContent = t.labelScoreboard;
+
+    const diffSelect = document.getElementById("difficulty-level");
+    diffSelect.querySelector('option[value="normal"]').textContent = t.difficultyNormal;
+    diffSelect.querySelector('option[value="hard"]').textContent = t.difficultyHard;
+    diffSelect.querySelector('option[value="very_hard"]').textContent = t.difficultyVeryHard;
     updateRoomUI(); // dil değişince textleri tazele
   }
 
@@ -681,6 +787,13 @@
     return list[Math.floor(Math.random() * list.length)](name);
   }
 
+  function getDifficultyLabel(value) {
+    const t = textMap[currentLang];
+    if (value === "hard") return t.difficultyHard;
+    if (value === "very_hard") return t.difficultyVeryHard;
+    return t.difficultyNormal;
+  }
+
   // --- Audio (Web Audio) ---
   let audioCtx = null;
   function getAudioCtx() {
@@ -691,25 +804,26 @@
     return audioCtx;
   }
 
-  function playTickSound() {
+  function playTickSound(remaining) {
     const ctx = getAudioCtx();
     if (!ctx) return;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
+    const baseFreq = remaining <= 5 ? 950 : 520;
     osc.type = "square";
-    osc.frequency.setValueAtTime(800, ctx.currentTime);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+    gain.gain.setValueAtTime(remaining <= 5 ? 0.16 : 0.06, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.05);
+    osc.stop(ctx.currentTime + 0.08);
   }
 
   function playExplosionSound() {
     const ctx = getAudioCtx();
     if (!ctx) return;
-    const len = ctx.sampleRate * 0.6;
+    const len = ctx.sampleRate * 0.75;
     const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < len; i++) {
@@ -718,11 +832,26 @@
     const noise = ctx.createBufferSource();
     noise.buffer = buffer;
     const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(900, ctx.currentTime);
     gain.gain.setValueAtTime(0.9, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-    noise.connect(gain);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.75);
+    noise.connect(filter);
+    filter.connect(gain);
     gain.connect(ctx.destination);
     noise.start();
+
+    const boomOsc = ctx.createOscillator();
+    const boomGain = ctx.createGain();
+    boomOsc.type = "sawtooth";
+    boomOsc.frequency.setValueAtTime(70, ctx.currentTime);
+    boomGain.gain.setValueAtTime(0.3, ctx.currentTime);
+    boomGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    boomOsc.connect(boomGain);
+    boomGain.connect(ctx.destination);
+    boomOsc.start();
+    boomOsc.stop(ctx.currentTime + 0.8);
   }
 
   // Helpers
@@ -739,38 +868,128 @@
     logEl.scrollTop = logEl.scrollHeight;
   }
 
-  function generateQuestion() {
-    // Basit +, -, *, / karışık
-    const ops = ["+", "-", "*", "/"];
-    const op = ops[Math.floor(Math.random() * ops.length)];
+  function randInt(min, max) {
+    return min + Math.floor(Math.random() * (max - min + 1));
+  }
 
-    let a, b, text, ans;
+  function generateNormalQuestion() {
+    const patterns = [
+      () => {
+        const a = randInt(15, 120);
+        const b = randInt(10, 90);
+        return { text: `${a} + ${b} = ?`, ans: a + b };
+      },
+      () => {
+        let a = randInt(40, 150);
+        let b = randInt(10, 80);
+        if (b > a) [a, b] = [b, a];
+        return { text: `${a} - ${b} = ?`, ans: a - b };
+      },
+      () => {
+        const a = randInt(6, 18);
+        const b = randInt(4, 14);
+        return { text: `${a} × ${b} = ?`, ans: a * b };
+      },
+      () => {
+        const divisor = randInt(4, 14);
+        const result = randInt(4, 16);
+        const dividend = divisor * result;
+        return { text: `${dividend} ÷ ${divisor} = ?`, ans: result };
+      },
+      () => {
+        const a = randInt(10, 60);
+        const b = randInt(5, 25);
+        const c = randInt(2, 10);
+        return { text: `${a} + ${b} × ${c} = ?`, ans: a + b * c };
+      }
+    ];
+    return patterns[Math.floor(Math.random() * patterns.length)]();
+  }
 
-    if (op === "+") {
-      a = 1 + Math.floor(Math.random() * 50);
-      b = 1 + Math.floor(Math.random() * 50);
-      text = `${a} + ${b} = ?`;
-      ans = a + b;
-    } else if (op === "-") {
-      a = 1 + Math.floor(Math.random() * 50);
-      b = 1 + Math.floor(Math.random() * 50);
-      if (b > a) [a, b] = [b, a];
-      text = `${a} - ${b} = ?`;
-      ans = a - b;
-    } else if (op === "*") {
-      a = 1 + Math.floor(Math.random() * 12);
-      b = 1 + Math.floor(Math.random() * 12);
-      text = `${a} × ${b} = ?`;
-      ans = a * b;
-    } else {
-      // Bölme: tam sayı çıkacak şekilde üret
-      b = 1 + Math.floor(Math.random() * 12);
-      const res = 1 + Math.floor(Math.random() * 12);
-      a = b * res;
-      text = `${a} ÷ ${b} = ?`;
-      ans = res;
-    }
-    return { text, ans };
+  function generateHardQuestion() {
+    const patterns = [
+      () => {
+        const a = randInt(8, 20);
+        const b = randInt(6, 16);
+        const c = randInt(5, 25);
+        return { text: `(${a} × ${b}) - ${c} = ?`, ans: a * b - c };
+      },
+      () => {
+        const a = randInt(8, 18);
+        const b = randInt(3, 9);
+        const c = randInt(4, 10);
+        return { text: `${a} × ${b} + ${c} = ?`, ans: a * b + c };
+      },
+      () => {
+        const c = randInt(4, 12);
+        const result = randInt(5, 18);
+        const b = randInt(10, 50);
+        const a = result * c + b;
+        return { text: `(${a} - ${b}) ÷ ${c} = ?`, ans: result };
+      },
+      () => {
+        const a = randInt(6, 14);
+        const b = randInt(6, 14);
+        const c = randInt(2, 9);
+        return { text: `${a} × ${b} - ${c} = ?`, ans: a * b - c };
+      },
+      () => {
+        const base = randInt(5, 11);
+        const exp = 2;
+        const c = randInt(10, 30);
+        return { text: `${base}^${exp} + ${c} = ?`, ans: base ** exp + c };
+      }
+    ];
+    return patterns[Math.floor(Math.random() * patterns.length)]();
+  }
+
+  function generateVeryHardQuestion() {
+    const patterns = [
+      () => {
+        const a = randInt(8, 16);
+        const b = randInt(6, 14);
+        const c = randInt(3, 9);
+        const d = randInt(2, 8);
+        return { text: `(${a} × ${b}) + ${c} × ${d} = ?`, ans: a * b + c * d };
+      },
+      () => {
+        const c = randInt(4, 12);
+        const d = randInt(3, 9);
+        const baseQuotient = randInt(6, 16);
+        const left = baseQuotient * c;
+        const a = randInt(10, left - 10);
+        const b = left - a;
+        return { text: `(${a} + ${b}) ÷ ${c} + ${d} = ?`, ans: baseQuotient + d };
+      },
+      () => {
+        const a = randInt(7, 15);
+        const b = randInt(5, 12);
+        const c = randInt(3, 9);
+        return { text: `${a}³ - (${b} × ${c}) = ?`, ans: a ** 3 - b * c };
+      },
+      () => {
+        const divisor = randInt(3, 12);
+        const d = randInt(2, 8);
+        const diff = divisor * randInt(4, 12);
+        const a = randInt(diff + 30, diff + 120);
+        const b = a - diff;
+        const result = (diff * d) / divisor;
+        return { text: `((${a} - ${b}) × ${d}) ÷ ${divisor} = ?`, ans: result };
+      },
+      () => {
+        const a = randInt(9, 18);
+        const b = randInt(4, 12);
+        const c = randInt(3, 10);
+        return { text: `${a}² - ${b} × ${c} = ?`, ans: a ** 2 - b * c };
+      }
+    ];
+    return patterns[Math.floor(Math.random() * patterns.length)]();
+  }
+
+  function generateQuestion(difficulty = "normal") {
+    if (difficulty === "hard") return generateHardQuestion();
+    if (difficulty === "very_hard") return generateVeryHardQuestion();
+    return generateNormalQuestion();
   }
 
   function saveLocalState() {
@@ -810,6 +1029,7 @@
   const passTargetSelect = document.getElementById("pass-target");
   const bombEl = document.getElementById("bomb");
   const bombTimerEl = document.getElementById("bomb-timer");
+  const roomDifficultyEl = document.getElementById("room-difficulty");
 
   let uiUpdatePending = false;
   function scheduleUIUpdate() {
@@ -830,6 +1050,7 @@
     const link = `${window.location.origin}${window.location.pathname}?game=${currentGame.slug}`;
     roomLinkEl.href = link;
     roomLinkEl.textContent = link;
+    roomDifficultyEl.textContent = getDifficultyLabel(currentGame.difficulty || "normal");
 
     let label = "";
     if (currentGame.status === "waiting") label = t.statusWaiting;
@@ -1090,11 +1311,11 @@
       bombTimerEl.textContent = "--";
       bombEl.classList.remove("exploding");
       bombEl.classList.remove("ticking");
+      bombEl.classList.remove("critical");
+      bombTimerEl.classList.remove("flash");
       lastSecondShown = null;
       return;
     }
-
-    const t = textMap[currentLang];
 
     const now = Date.now();
     const deadline = new Date(currentGame.deadline_at).getTime();
@@ -1102,15 +1323,17 @@
 
     bombTimerEl.textContent = remaining.toString();
     bombEl.classList.toggle("ticking", remaining > 0);
+    bombEl.classList.toggle("critical", remaining > 0 && remaining <= 5);
+    bombTimerEl.classList.toggle("flash", remaining > 0 && remaining <= 5);
     if (remaining === 0) {
       bombEl.classList.add("exploding");
     } else {
       bombEl.classList.remove("exploding");
     }
 
-    if (remaining !== lastSecondShown && remaining <= 5 && remaining > 0) {
+    if (remaining !== lastSecondShown && remaining > 0) {
       lastSecondShown = remaining;
-      playTickSound();
+      playTickSound(remaining);
     }
   }
 
@@ -1118,6 +1341,7 @@
     const t = textMap[currentLang];
     const name = document.getElementById("creator-name").value.trim();
     const limit = Number(document.getElementById("time-limit").value);
+    const difficulty = document.getElementById("difficulty-level").value;
     const errEl = document.getElementById("create-error");
     errEl.textContent = "";
 
@@ -1134,7 +1358,8 @@
         slug,
         status: "waiting",
         creator_name: name,
-        time_limit_seconds: limit
+        time_limit_seconds: limit,
+        difficulty
       })
       .select()
       .single();
@@ -1235,7 +1460,7 @@
     }
 
     const first = alive[Math.floor(Math.random() * alive.length)];
-    const { text, ans } = generateQuestion();
+    const { text, ans } = generateQuestion(currentGame.difficulty || "normal");
     const now = new Date();
     const deadline = new Date(now.getTime() + currentGame.time_limit_seconds * 1000);
 
@@ -1299,7 +1524,7 @@
 
     if (!next || !shooter) return;
 
-    const { text, ans } = generateQuestion();
+    const { text, ans } = generateQuestion(currentGame.difficulty || "normal");
     const now = new Date();
     const deadline = new Date(now.getTime() + currentGame.time_limit_seconds * 1000);
 
