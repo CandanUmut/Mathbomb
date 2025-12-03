@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Math Bomb · Online Zamanlı Matematik Oyunu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: #020617;
+      --card: #0f172a;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.2);
+      --danger: #f97373;
+      --text: #e5e7eb;
+      --text-soft: #9ca3af;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: radial-gradient(circle at top, #0b1120, #020617 55%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+
+    .app {
+      max-width: 960px;
+      width: 100%;
+      padding: 24px 16px 32px;
+    }
+
+    .card {
+      position: relative;
+      background: radial-gradient(circle at top, #020617, #020617 40%), var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(75, 85, 99, 0.4);
+      backdrop-filter: blur(24px);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h1 span.icon { font-size: 2.2rem; }
+
+    .subtitle {
+      color: var(--text-soft);
+      margin-bottom: 12px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .col {
+      flex: 1 1 260px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      margin-bottom: 4px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+    }
+
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(to right, #22c55e, #38bdf8);
+      color: #0f172a;
+      box-shadow: 0 8px 25px rgba(56, 189, 248, 0.45);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    button.secondary {
+      background: transparent;
+      border: 1px solid #4b5563;
+      color: var(--text-soft);
+      box-shadow: none;
+    }
+
+    button[disabled] {
+      opacity: 0.5;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-soft);
+      margin-bottom: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(75, 85, 99, 0.7);
+      color: var(--text-soft);
+    }
+
+    .pill-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+    }
+
+    .players {
+      border-radius: 12px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.95);
+      padding: 10px 12px;
+      max-height: 220px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+    }
+
+    .player-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px dashed rgba(31, 41, 55, 0.7);
+    }
+
+    .player-row:last-child { border-bottom: none; }
+
+    .player-name {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .player-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+
+    .player-dot.dead { background: #4b5563; }
+
+    .player-tag {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      color: #9ca3af;
+    }
+
+    .status-banner {
+      margin-top: 16px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: radial-gradient(circle at left, rgba(56, 189, 248, 0.12), transparent),
+                  rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(75, 85, 99, 0.8);
+    }
+
+    .status-text strong { color: var(--accent); }
+
+    .status-danger {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    /* Bomb & timer area */
+    .bomb-panel {
+      margin-top: 18px;
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), #020617);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+    }
+
+    .bomb-wrapper {
+      position: relative;
+      width: 160px;
+      height: 160px;
+    }
+
+    .bomb {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      margin: 0 auto;
+      background: radial-gradient(circle at 30% 30%, #1f2937, #020617 70%);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .bomb.ticking {
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.7);
+    }
+
+    .bomb.exploding {
+      background: radial-gradient(circle at 30% 30%, #b91c1c, #020617 80%);
+      box-shadow: 0 0 60px rgba(248, 113, 113, 0.95);
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    .bomb-timer {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #f9fafb;
+    }
+
+    .fuse {
+      position: absolute;
+      width: 80px;
+      height: 4px;
+      border-radius: 999px;
+      background: #facc15;
+      top: 10px;
+      left: 50%;
+      transform-origin: left center;
+      transform: translateX(-10%) rotate(-20deg);
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.7);
+    }
+
+    .spark {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: radial-gradient(circle, #f97316, rgba(248, 113, 113, 0));
+      top: 4px;
+      right: -6px;
+      animation: spark 0.4s infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes spark {
+      from { transform: scale(0.7); opacity: 0.7; }
+      to   { transform: scale(1.1); opacity: 1; }
+    }
+
+    .question {
+      font-size: 1.3rem;
+      font-weight: 600;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .answer-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .small-input {
+      width: 110px;
+      text-align: center;
+    }
+
+    .pass-select {
+      min-width: 160px;
+    }
+
+    .log {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--text-soft);
+      max-height: 120px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .log-line { margin-bottom: 4px; }
+
+    .error {
+      color: var(--danger);
+      font-size: 0.8rem;
+      margin-top: 6px;
+    }
+
+    .scoreboard {
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.9);
+      padding: 10px 12px;
+      font-size: 0.8rem;
+    }
+
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      border-bottom: 1px dashed rgba(31,41,55,0.7);
+    }
+
+    .score-row:last-child { border-bottom: none; }
+
+    .score-points { font-weight: 600; }
+
+    #status-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .lang-switch {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      display: flex;
+      gap: 6px;
+    }
+
+    .lang-btn {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(75, 85, 99, 0.8);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-soft);
+      cursor: pointer;
+    }
+
+    .lang-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+
+    @media (max-width: 768px) {
+      .card { padding: 16px; }
+      .bomb-wrapper { width: 140px; height: 140px; }
+      .bomb { width: 120px; height: 120px; }
+      .bomb-timer { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="lang-switch">
+      <button class="lang-btn active" data-lang="tr">🇹🇷 TR</button>
+      <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+    </div>
+
+    <h1>
+      <span class="icon">💣</span>
+      <span id="title-text">Math Bomb</span>
+    </h1>
+    <div class="subtitle" id="subtitle-text">
+      Basit işlemler, kısıtlı süre, elinde patlamadan doğru cevabı bul ve bombayı birine at.
+    </div>
+
+    <!-- Setup -->
+    <div class="row" id="setup-section">
+      <div class="col">
+        <div class="section-title" id="create-section-title">Yeni Oyun Oluştur</div>
+        <label id="label-creator-name">İsmin</label>
+        <input id="creator-name" placeholder="Umut, Nova vs." />
+
+        <label style="margin-top:8px;" id="label-time-limit">Süre (saniye)</label>
+        <select id="time-limit">
+          <option value="20">20</option>
+          <option value="30" selected>30</option>
+          <option value="45">45</option>
+          <option value="60">60</option>
+        </select>
+
+        <button id="create-game-btn" style="margin-top:12px;">
+          <span id="btn-create-text">Oyun Oluştur</span> <span>➕</span>
+        </button>
+        <div id="create-error" class="error"></div>
+      </div>
+
+      <div class="col">
+        <div class="section-title" id="join-section-title">Koda / Linke Göre Katıl</div>
+        <label id="label-join-name">İsmin</label>
+        <input id="join-name" placeholder="İsmin" />
+
+        <label style="margin-top:8px;" id="label-join-code">Oda Kodu</label>
+        <input id="join-code" placeholder="Örn: ABCD12" />
+
+        <button id="join-game-btn" style="margin-top:12px;" class="secondary">
+          <span id="btn-join-text">Oyuna Katıl</span> <span>➡️</span>
+        </button>
+        <div id="join-help-text" style="margin-top:8px;font-size:0.8rem;color:var(--text-soft);">
+          Eğer linkle geldiysen kod otomatik dolabilir.
+        </div>
+        <div id="join-error" class="error"></div>
+      </div>
+    </div>
+
+    <!-- Game -->
+    <div id="game-section" style="display:none; margin-top:16px;">
+      <div class="row">
+        <div class="col">
+          <div class="section-title" id="room-section-title">Oda</div>
+          <div class="pill">
+            <span class="pill-dot"></span>
+            <span id="room-status-text">Bekleniyor...</span>
+          </div>
+          <div style="margin-top:8px;font-size:0.85rem;">
+            <span id="room-code-label">Oda kodu:</span>
+            <strong id="room-code">-</strong>
+          </div>
+          <div style="margin-top:4px;font-size:0.8rem;">
+            <span id="room-link-label">Link:</span>
+            <a id="room-link" class="link" href="#" style="color:var(--accent);word-break:break-all;"></a>
+          </div>
+        </div>
+        <div class="col">
+          <div class="section-title" id="players-section-title">Oyuncular</div>
+          <div class="players" id="players-list"></div>
+        </div>
+      </div>
+
+      <div class="status-banner">
+        <div class="status-text" id="status-text">Oyun henüz başlamadı.</div>
+        <div id="status-actions"></div>
+      </div>
+
+      <div class="bomb-panel">
+        <div class="section-title" id="bomb-section-title">Bomba & Soru</div>
+
+        <div class="bomb-wrapper">
+          <div class="bomb" id="bomb">
+            <div class="bomb-timer" id="bomb-timer">--</div>
+          </div>
+          <div class="fuse">
+            <div class="spark"></div>
+          </div>
+        </div>
+
+        <div class="question" id="question-text">Soru bekleniyor...</div>
+
+        <div class="answer-row">
+          <input id="answer-input" class="small-input" type="number" placeholder="Cevap" />
+          <select id="pass-target" class="pass-select">
+          </select>
+          <button id="submit-answer-btn">
+            <span id="btn-submit-text">Cevapla & Bombayı At</span>
+          </button>
+        </div>
+
+        <div class="log" id="log"></div>
+      </div>
+
+      <div class="scoreboard" id="scoreboard">
+        <div class="section-title" id="scoreboard-title">Skor Tablosu</div>
+        <div id="scoreboard-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  // TODO: kendi Supabase proje bilgilerin
+  const SUPABASE_URL = "https://tkggowekxmnlixwinszl.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrZ2dvd2VreG1ubGl4d2luc3psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MzI1NjcsImV4cCI6MjA4MDMwODU2N30.y1GSvarl9YyBqMaP8x6SXeD88EJ10gjee4rlr6oLyZg";
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const LS_KEY = "math_bomb_state_v1";
+  const LS_LANG = "math_bomb_lang";
+
+  // --- i18n ---
+  let currentLang = localStorage.getItem(LS_LANG) || "tr";
+
+  const textMap = {
+    tr: {
+      title: "Math Bomb",
+      subtitle: "Basit işlemler, kısıtlı süre. Elinde patlamadan doğru cevabı bul ve bombayı birine at.",
+      createSectionTitle: "Yeni Oyun Oluştur",
+      joinSectionTitle: "Koda / Linke Göre Katıl",
+      labelCreatorName: "İsmin",
+      labelTimeLimit: "Süre (saniye)",
+      labelJoinName: "İsmin",
+      labelJoinCode: "Oda Kodu",
+      btnCreate: "Oyun Oluştur",
+      btnJoin: "Oyuna Katıl",
+      joinHelp: "Eğer linkle geldiysen kod otomatik dolabilir.",
+      roomSectionTitle: "Oda",
+      roomCodeLabel: "Oda kodu:",
+      roomLinkLabel: "Link:",
+      playersSectionTitle: "Oyuncular",
+      bombSectionTitle: "Bomba & Soru",
+      statusWaiting: "Oyun henüz başlamadı. Oyuncular katılabilir.",
+      statusRunningPrefix: "Sıra:",
+      statusFinished: "Oyun bitti.",
+      labelScoreboard: "Skor Tablosu",
+      btnStartGame: "Oyunu Başlat",
+      btnPlayAgain: "Tekrar Oyna (Aynı Oda)",
+      btnNewRoom: "Yeni Oda",
+      btnSubmit: "Cevapla & Bombayı At",
+      errorNameRequired: "İsmini yazmalısın.",
+      errorCodeRequired: "Oda kodu boş olamaz.",
+      errorRoomNotFound: "Böyle bir oda bulunamadı.",
+      logGameCreated: slug => `Oyun oluşturuldu. Kod: ${slug}`,
+      logJoined: slug => `Odaya katıldın. Kod: ${slug}`,
+      logStart: name => `Oyun başladı. İlk oyuncu: ${name}`,
+      logQuestion: q => `Yeni soru: ${q}`,
+      logAnswerCorrect: (p, t) => `${p} doğru bildi ve bombayı ${t}'ye attı.`,
+      logAnswerWrong: p => `${p} yanlış cevap verdi, tekrar deneyebilir.`,
+      logTimeout: p => `Süre bitti! Bomba ${p}'nin elinde patladı.`,
+      logReset: "Yeni tur için hazır. Oyuncular bekleniyor.",
+      labelTimer: "Kalan süre",
+      youLabel: "Sen",
+      deadTag: "Patladı",
+      hostTag: "Kurucu",
+      statusTurnPreparing: "Sıra bilgisi yükleniyor...",
+    },
+    en: {
+      title: "Math Bomb",
+      subtitle: "Simple math, limited time. Solve before it blows up and pass the bomb to someone else.",
+      createSectionTitle: "Create New Game",
+      joinSectionTitle: "Join with Code / Link",
+      labelCreatorName: "Your name",
+      labelTimeLimit: "Time (seconds)",
+      labelJoinName: "Your name",
+      labelJoinCode: "Room Code",
+      btnCreate: "Create Game",
+      btnJoin: "Join Game",
+      joinHelp: "If you came via link, the code may auto-fill.",
+      roomSectionTitle: "Room",
+      roomCodeLabel: "Room code:",
+      roomLinkLabel: "Link:",
+      playersSectionTitle: "Players",
+      bombSectionTitle: "Bomb & Question",
+      statusWaiting: "Game has not started yet. Players can still join.",
+      statusRunningPrefix: "Turn:",
+      statusFinished: "Game over.",
+      labelScoreboard: "Scoreboard",
+      btnStartGame: "Start Game",
+      btnPlayAgain: "Play Again (Same Room)",
+      btnNewRoom: "New Room",
+      btnSubmit: "Answer & Pass Bomb",
+      errorNameRequired: "Please enter your name.",
+      errorCodeRequired: "Room code cannot be empty.",
+      errorRoomNotFound: "Room not found.",
+      logGameCreated: slug => `Game created. Code: ${slug}`,
+      logJoined: slug => `Joined room. Code: ${slug}`,
+      logStart: name => `Game started. First player: ${name}`,
+      logQuestion: q => `New question: ${q}`,
+      logAnswerCorrect: (p, t) => `${p} answered correctly and passed the bomb to ${t}.`,
+      logAnswerWrong: p => `${p} answered wrong, can try again while time remains.`,
+      logTimeout: p => `Time is up! The bomb exploded in ${p}'s hands.`,
+      logReset: "Ready for a new round. Waiting for players.",
+      labelTimer: "Time left",
+      youLabel: "You",
+      deadTag: "Boom",
+      hostTag: "Host",
+      statusTurnPreparing: "Turn info loading...",
+    }
+  };
+
+  function applyLanguage() {
+    const t = textMap[currentLang];
+    document.getElementById("title-text").textContent = t.title;
+    document.getElementById("subtitle-text").textContent = t.subtitle;
+    document.getElementById("create-section-title").textContent = t.createSectionTitle;
+    document.getElementById("join-section-title").textContent = t.joinSectionTitle;
+    document.getElementById("label-creator-name").textContent = t.labelCreatorName;
+    document.getElementById("label-time-limit").textContent = t.labelTimeLimit;
+    document.getElementById("label-join-name").textContent = t.labelJoinName;
+    document.getElementById("label-join-code").textContent = t.labelJoinCode;
+    document.getElementById("btn-create-text").textContent = t.btnCreate;
+    document.getElementById("btn-join-text").textContent = t.btnJoin;
+    document.getElementById("join-help-text").textContent = t.joinHelp;
+    document.getElementById("room-section-title").textContent = t.roomSectionTitle;
+    document.getElementById("room-code-label").textContent = t.roomCodeLabel;
+    document.getElementById("room-link-label").textContent = t.roomLinkLabel;
+    document.getElementById("players-section-title").textContent = t.playersSectionTitle;
+    document.getElementById("bomb-section-title").textContent = t.bombSectionTitle;
+    document.getElementById("btn-submit-text").textContent = t.btnSubmit;
+    document.getElementById("scoreboard-title").textContent = t.labelScoreboard;
+    updateRoomUI(); // dil değişince textleri tazele
+  }
+
+  const funSafeMessages = {
+    tr: [
+      name => `${name}: Bombayı şimdilik sakinleştirdi.`,
+      name => `${name}: Hesap kitap sağlam, bomba sende değil artık.`,
+      name => `${name}: Doğru cevapla patlamadan yırttı.`
+    ],
+    en: [
+      name => `${name}: Defused it just in time.`,
+      name => `${name}: Clean math, clean hands.`,
+      name => `${name}: Escaped the blast this round.`
+    ]
+  };
+
+  const funBoomMessages = {
+    tr: [
+      name => `💥 ${name} için lobby zamanı.`,
+      name => `💥 ${name} patladı, skorlar güncellendi.`,
+    ],
+    en: [
+      name => `💥 ${name} just exploded.`,
+      name => `💥 ${name} is out, scores updated.`,
+    ]
+  };
+
+  function pickSafeMsg(name) {
+    const list = funSafeMessages[currentLang];
+    return list[Math.floor(Math.random() * list.length)](name);
+  }
+
+  function pickBoomMsg(name) {
+    const list = funBoomMessages[currentLang];
+    return list[Math.floor(Math.random() * list.length)](name);
+  }
+
+  // --- Audio (Web Audio) ---
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+
+  function playTickSound() {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  }
+
+  function playExplosionSound() {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const len = ctx.sampleRate * 0.6;
+    const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.9, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    noise.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start();
+  }
+
+  // Helpers
+  function randomSlug(len = 6) {
+    return Math.random().toString(36).substring(2, 2 + len).toUpperCase();
+  }
+
+  function log(msg) {
+    const logEl = document.getElementById("log");
+    const line = document.createElement("div");
+    line.className = "log-line";
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function generateQuestion() {
+    // Basit +, -, *, / karışık
+    const ops = ["+", "-", "*", "/"];
+    const op = ops[Math.floor(Math.random() * ops.length)];
+
+    let a, b, text, ans;
+
+    if (op === "+") {
+      a = 1 + Math.floor(Math.random() * 50);
+      b = 1 + Math.floor(Math.random() * 50);
+      text = `${a} + ${b} = ?`;
+      ans = a + b;
+    } else if (op === "-") {
+      a = 1 + Math.floor(Math.random() * 50);
+      b = 1 + Math.floor(Math.random() * 50);
+      if (b > a) [a, b] = [b, a];
+      text = `${a} - ${b} = ?`;
+      ans = a - b;
+    } else if (op === "*") {
+      a = 1 + Math.floor(Math.random() * 12);
+      b = 1 + Math.floor(Math.random() * 12);
+      text = `${a} × ${b} = ?`;
+      ans = a * b;
+    } else {
+      // Bölme: tam sayı çıkacak şekilde üret
+      b = 1 + Math.floor(Math.random() * 12);
+      const res = 1 + Math.floor(Math.random() * 12);
+      a = b * res;
+      text = `${a} ÷ ${b} = ?`;
+      ans = res;
+    }
+    return { text, ans };
+  }
+
+  function saveLocalState() {
+    if (!currentGame || !currentPlayer) return;
+    try {
+      localStorage.setItem(
+        LS_KEY,
+        JSON.stringify({ gameSlug: currentGame.slug, playerId: currentPlayer.id })
+      );
+    } catch (_) {}
+  }
+
+  function clearLocalState() {
+    try { localStorage.removeItem(LS_KEY); } catch (_) {}
+  }
+
+  // --- State ---
+  let currentGame = null;
+  let currentPlayer = null;
+  let players = [];
+  let isCreator = false;
+  let pollInterval = null;
+  let timerInterval = null;
+  let lastSecondShown = null;
+
+  // DOM refs
+  const setupSection = document.getElementById("setup-section");
+  const gameSection = document.getElementById("game-section");
+  const roomCodeEl = document.getElementById("room-code");
+  const roomLinkEl = document.getElementById("room-link");
+  const roomStatusText = document.getElementById("room-status-text");
+  const playersList = document.getElementById("players-list");
+  const statusText = document.getElementById("status-text");
+  const statusActions = document.getElementById("status-actions");
+  const questionTextEl = document.getElementById("question-text");
+  const answerInput = document.getElementById("answer-input");
+  const passTargetSelect = document.getElementById("pass-target");
+  const bombEl = document.getElementById("bomb");
+  const bombTimerEl = document.getElementById("bomb-timer");
+
+  let uiUpdatePending = false;
+  function scheduleUIUpdate() {
+    if (uiUpdatePending) return;
+    uiUpdatePending = true;
+    requestAnimationFrame(() => {
+      uiUpdatePending = false;
+      updateRoomUI();
+    });
+  }
+
+  function updateRoomUI() {
+    const t = textMap[currentLang];
+
+    if (!currentGame) return;
+
+    roomCodeEl.textContent = currentGame.slug;
+    const link = `${window.location.origin}${window.location.pathname}?game=${currentGame.slug}`;
+    roomLinkEl.href = link;
+    roomLinkEl.textContent = link;
+
+    let label = "";
+    if (currentGame.status === "waiting") label = t.statusWaiting;
+    else if (currentGame.status === "running") {
+      const turn = players.find(p => p.id === currentGame.current_player_id);
+      if (turn) {
+        label = `${t.statusRunningPrefix} <strong>${turn.name}</strong>`;
+      } else {
+        label = t.statusTurnPreparing;
+      }
+    } else {
+      label = t.statusFinished;
+    }
+    roomStatusText.textContent = label.replace(/<[^>]+>/g, "");
+
+    // players list
+    playersList.innerHTML = "";
+    players.forEach(p => {
+      const row = document.createElement("div");
+      row.className = "player-row";
+
+      const left = document.createElement("div");
+      left.className = "player-name";
+      const dot = document.createElement("div");
+      dot.className = "player-dot";
+      if (!p.is_alive) dot.classList.add("dead");
+      left.appendChild(dot);
+
+      const nameSpan = document.createElement("span");
+      const youPrefix = currentPlayer && p.id === currentPlayer.id ? `(${t.youLabel}) ` : "";
+      nameSpan.textContent = youPrefix + p.name;
+      left.appendChild(nameSpan);
+
+      const right = document.createElement("div");
+      if (p.is_creator) {
+        const hostTag = document.createElement("span");
+        hostTag.className = "player-tag";
+        hostTag.textContent = t.hostTag;
+        right.appendChild(hostTag);
+      }
+      if (!p.is_alive) {
+        const deadTag = document.createElement("span");
+        deadTag.className = "player-tag";
+        deadTag.textContent = t.deadTag;
+        right.appendChild(deadTag);
+      }
+      const turn = currentGame.current_player_id === p.id && currentGame.status === "running";
+      if (turn) {
+        const turnTag = document.createElement("span");
+        turnTag.className = "player-tag";
+        turnTag.style.borderColor = "#38bdf8";
+        turnTag.style.color = "#38bdf8";
+        turnTag.textContent = currentLang === "tr" ? "Sıra" : "Turn";
+        right.appendChild(turnTag);
+      }
+
+      row.appendChild(left);
+      row.appendChild(right);
+      playersList.appendChild(row);
+    });
+
+    // banner rich html
+    let bannerHTML = "";
+    if (currentGame.status === "waiting") {
+      bannerHTML = t.statusWaiting;
+    } else if (currentGame.status === "running") {
+      const turn = players.find(p => p.id === currentGame.current_player_id);
+      if (turn) {
+        bannerHTML = `${t.statusRunningPrefix} <strong>${turn.name}</strong>`;
+      } else {
+        bannerHTML = t.statusTurnPreparing;
+      }
+    } else {
+      const loser = players.find(p => !p.is_alive);
+      if (loser) bannerHTML = `<span class="status-danger">${t.logTimeout(loser.name)}</span>`;
+      else bannerHTML = `<span class="status-danger">${t.statusFinished}</span>`;
+    }
+    statusText.innerHTML = bannerHTML;
+
+    // question
+    if (currentGame.current_question) {
+      questionTextEl.textContent = currentGame.current_question;
+    } else if (currentGame.status === "waiting") {
+      questionTextEl.textContent = currentLang === "tr" ? "Oyun başladıktan sonra sorular burada." : "Questions will appear here once game starts.";
+    } else {
+      questionTextEl.textContent = currentLang === "tr" ? "Soru bekleniyor..." : "Waiting for question...";
+    }
+
+    // pass target list:
+    passTargetSelect.innerHTML = "";
+    const aliveOthers = players.filter(
+      p => p.is_alive && currentGame && p.id !== currentGame.current_player_id
+    );
+    aliveOthers.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.name;
+      passTargetSelect.appendChild(opt);
+    });
+
+    // scoreboard
+    const sbBody = document.getElementById("scoreboard-body");
+    sbBody.innerHTML = "";
+    const sorted = [...players].sort((a,b) => (b.score||0) - (a.score||0));
+    sorted.forEach(p => {
+      const row = document.createElement("div");
+      row.className = "score-row";
+      const name = document.createElement("div");
+      name.textContent = p.name;
+      const pts = document.createElement("div");
+      pts.className = "score-points";
+      const s = p.score || 0;
+      pts.textContent = s > 0 ? `+${s}` : `${s}`;
+      row.appendChild(name);
+      row.appendChild(pts);
+      sbBody.appendChild(row);
+    });
+
+    // buttons in banner
+    statusActions.innerHTML = "";
+    const tbtn = textMap[currentLang];
+
+    if (isCreator && currentGame.status === "waiting") {
+      const startBtn = document.createElement("button");
+      startBtn.textContent = tbtn.btnStartGame;
+      startBtn.onclick = startGame;
+      statusActions.appendChild(startBtn);
+    }
+
+    if (currentGame.status === "finished" && isCreator) {
+      const again = document.createElement("button");
+      again.textContent = tbtn.btnPlayAgain;
+      again.onclick = restartGame;
+      statusActions.appendChild(again);
+
+      const newRoom = document.createElement("button");
+      newRoom.className = "secondary";
+      newRoom.textContent = tbtn.btnNewRoom;
+      newRoom.onclick = () => {
+        clearLocalState();
+        window.location.href = window.location.pathname;
+      };
+      statusActions.appendChild(newRoom);
+    }
+
+    // answer input enable / disable
+    const myTurn = currentGame.status === "running" &&
+      currentGame.current_player_id === (currentPlayer && currentPlayer.id) &&
+      currentPlayer && currentPlayer.is_alive;
+
+    answerInput.disabled = !myTurn;
+    passTargetSelect.disabled = !myTurn || aliveOthers.length === 0;
+    document.getElementById("submit-answer-btn").disabled =
+      !myTurn || aliveOthers.length === 0;
+
+    if (!myTurn) {
+      answerInput.value = "";
+    }
+  }
+
+  async function fetchPlayers(gameId) {
+    const { data, error } = await supabase
+      .from("mb_players")
+      .select("*")
+      .eq("game_id", gameId)
+      .order("created_at", { ascending: true });
+    if (!error) {
+      players = data;
+      if (currentPlayer) {
+        const me = players.find(p => p.id === currentPlayer.id);
+        if (me) currentPlayer = me;
+      }
+      scheduleUIUpdate();
+    }
+  }
+
+  async function fetchGameBySlug(slug) {
+    const { data, error } = await supabase
+      .from("mb_games")
+      .select("*")
+      .eq("slug", slug)
+      .single();
+    if (error) return null;
+    return data;
+  }
+
+  async function fetchGameById(id) {
+    const { data, error } = await supabase
+      .from("mb_games")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) return null;
+    return data;
+  }
+
+  async function fetchPlayerById(id) {
+    const { data, error } = await supabase
+      .from("mb_players")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) return null;
+    return data;
+  }
+
+  async function pollGameState() {
+    if (!currentGame) return;
+    const game = await fetchGameById(currentGame.id);
+    if (game) {
+      currentGame = game;
+      await fetchPlayers(game.id);
+      scheduleUIUpdate();
+    }
+  }
+
+  function startPolling() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(pollGameState, 4000);
+  }
+
+  function attachRealtime(gameId) {
+    supabase
+      .channel("mb-game-" + gameId)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "mb_games", filter: `id=eq.${gameId}` },
+        payload => {
+          if (payload.new) {
+            currentGame = payload.new;
+            scheduleUIUpdate();
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "mb_players", filter: `game_id=eq.${gameId}` },
+        () => {
+          fetchPlayers(gameId);
+        }
+      )
+      .subscribe();
+
+    startPolling();
+    startTimerLoop();
+  }
+
+  function startTimerLoop() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      updateTimerVisuals();
+      if (isCreator) checkTimeout();
+    }, 200);
+  }
+
+  function updateTimerVisuals() {
+    if (!currentGame || !currentGame.deadline_at || currentGame.status !== "running") {
+      bombTimerEl.textContent = "--";
+      bombEl.classList.remove("exploding");
+      bombEl.classList.remove("ticking");
+      lastSecondShown = null;
+      return;
+    }
+
+    const t = textMap[currentLang];
+
+    const now = Date.now();
+    const deadline = new Date(currentGame.deadline_at).getTime();
+    let remaining = Math.max(0, Math.ceil((deadline - now) / 1000));
+
+    bombTimerEl.textContent = remaining.toString();
+    bombEl.classList.toggle("ticking", remaining > 0);
+    if (remaining === 0) {
+      bombEl.classList.add("exploding");
+    } else {
+      bombEl.classList.remove("exploding");
+    }
+
+    if (remaining !== lastSecondShown && remaining <= 5 && remaining > 0) {
+      lastSecondShown = remaining;
+      playTickSound();
+    }
+  }
+
+  async function createGame() {
+    const t = textMap[currentLang];
+    const name = document.getElementById("creator-name").value.trim();
+    const limit = Number(document.getElementById("time-limit").value);
+    const errEl = document.getElementById("create-error");
+    errEl.textContent = "";
+
+    if (!name) {
+      errEl.textContent = t.errorNameRequired;
+      return;
+    }
+
+    const slug = randomSlug();
+
+    const { data: game, error } = await supabase
+      .from("mb_games")
+      .insert({
+        slug,
+        status: "waiting",
+        creator_name: name,
+        time_limit_seconds: limit
+      })
+      .select()
+      .single();
+
+    if (error) {
+      errEl.textContent = "Oyun oluşturulamadı: " + error.message;
+      return;
+    }
+
+    const { data: player, error: pErr } = await supabase
+      .from("mb_players")
+      .insert({
+        game_id: game.id,
+        name,
+        is_creator: true
+      })
+      .select()
+      .single();
+
+    if (pErr) {
+      errEl.textContent = "Oyuncu eklenemedi: " + pErr.message;
+      return;
+    }
+
+    isCreator = true;
+    currentGame = game;
+    currentPlayer = player;
+
+    setupSection.style.display = "none";
+    gameSection.style.display = "block";
+    log(t.logGameCreated(game.slug));
+
+    saveLocalState();
+    scheduleUIUpdate();
+    attachRealtime(game.id);
+    await fetchPlayers(game.id);
+  }
+
+  async function joinGameByCode() {
+    const t = textMap[currentLang];
+    const name = document.getElementById("join-name").value.trim();
+    const code = document.getElementById("join-code").value.trim().toUpperCase();
+    const errEl = document.getElementById("join-error");
+    errEl.textContent = "";
+
+    if (!name) {
+      errEl.textContent = t.errorNameRequired;
+      return;
+    }
+    if (!code) {
+      errEl.textContent = t.errorCodeRequired;
+      return;
+    }
+
+    const game = await fetchGameBySlug(code);
+    if (!game) {
+      errEl.textContent = t.errorRoomNotFound;
+      return;
+    }
+
+    const { data: player, error: pErr } = await supabase
+      .from("mb_players")
+      .insert({
+        game_id: game.id,
+        name,
+        is_creator: false
+      })
+      .select()
+      .single();
+
+    if (pErr) {
+      errEl.textContent = "Oyuncu eklenemedi: " + pErr.message;
+      return;
+    }
+
+    isCreator = !!player.is_creator;
+    currentGame = game;
+    currentPlayer = player;
+
+    setupSection.style.display = "none";
+    gameSection.style.display = "block";
+    log(t.logJoined(game.slug));
+
+    saveLocalState();
+    scheduleUIUpdate();
+    attachRealtime(game.id);
+    await fetchPlayers(game.id);
+  }
+
+  async function startGame() {
+    if (!currentGame || !isCreator) return;
+    const t = textMap[currentLang];
+
+    const alive = players.filter(p => p.is_alive);
+    if (alive.length < 2) {
+      log(currentLang === "tr" ? "En az 2 oyuncu olmalı." : "At least 2 players are required.");
+      return;
+    }
+
+    const first = alive[Math.floor(Math.random() * alive.length)];
+    const { text, ans } = generateQuestion();
+    const now = new Date();
+    const deadline = new Date(now.getTime() + currentGame.time_limit_seconds * 1000);
+
+    const { data, error } = await supabase
+      .from("mb_games")
+      .update({
+        status: "running",
+        started_at: now.toISOString(),
+        current_player_id: first.id,
+        current_question: text,
+        current_answer: ans,
+        deadline_at: deadline.toISOString()
+      })
+      .eq("id", currentGame.id)
+      .select()
+      .single();
+
+    if (error) {
+      log("Oyun başlatılamadı: " + error.message);
+      return;
+    }
+
+    currentGame = data;
+    log(t.logStart(first.name));
+    log(t.logQuestion(text));
+    scheduleUIUpdate();
+  }
+
+  async function updateScoresAfterRound(loserId) {
+    if (!currentGame) return;
+
+    const { data: curPlayers, error } = await supabase
+      .from("mb_players")
+      .select("*")
+      .eq("game_id", currentGame.id);
+
+    if (error || !curPlayers) return;
+
+    for (const p of curPlayers) {
+      let delta = 0;
+      if (p.id === loserId) delta = -2;
+      else if (p.is_alive) delta = 2;
+
+      if (delta !== 0) {
+        await supabase
+          .from("mb_players")
+          .update({ score: (p.score || 0) + delta })
+          .eq("id", p.id);
+      }
+    }
+
+    await fetchPlayers(currentGame.id);
+  }
+
+  async function handleCorrectAnswer(nextPlayerId) {
+    if (!currentGame) return;
+    const t = textMap[currentLang];
+
+    const next = players.find(p => p.id === Number(nextPlayerId) && p.is_alive);
+    const shooter = players.find(p => p.id === currentGame.current_player_id);
+
+    if (!next || !shooter) return;
+
+    const { text, ans } = generateQuestion();
+    const now = new Date();
+    const deadline = new Date(now.getTime() + currentGame.time_limit_seconds * 1000);
+
+    const { data, error } = await supabase
+      .from("mb_games")
+      .update({
+        current_player_id: next.id,
+        current_question: text,
+        current_answer: ans,
+        deadline_at: deadline.toISOString()
+      })
+      .eq("id", currentGame.id)
+      .select()
+      .single();
+
+    if (!error && data) {
+      currentGame = data;
+      log(pickSafeMsg(shooter.name));
+      log(t.logAnswerCorrect(shooter.name, next.name));
+      log(t.logQuestion(text));
+      scheduleUIUpdate();
+    }
+  }
+
+  async function submitAnswer() {
+    if (!currentGame || !currentPlayer) return;
+    if (currentGame.status !== "running") return;
+    if (currentGame.current_player_id !== currentPlayer.id) return;
+
+    getAudioCtx(); // kullanıcı etkileşimi ile aç
+
+    const raw = answerInput.value.trim();
+    if (!raw) return;
+    const guess = Number(raw);
+    if (!Number.isFinite(guess)) return;
+
+    const now = Date.now();
+    const deadline = currentGame.deadline_at ? new Date(currentGame.deadline_at).getTime() : 0;
+    if (deadline && now > deadline) {
+      // süre zaten bitmiş ise; timeout fonksiyonu halleder
+      return;
+    }
+
+    const correct = guess === currentGame.current_answer;
+    if (!correct) {
+      log(textMap[currentLang].logAnswerWrong(currentPlayer.name));
+      return;
+    }
+
+    const targetId = passTargetSelect.value;
+    if (!targetId) return;
+
+    answerInput.value = "";
+    await handleCorrectAnswer(targetId);
+  }
+
+  async function checkTimeout() {
+    if (!currentGame || currentGame.status !== "running") return;
+    if (!currentGame.deadline_at) return;
+
+    const now = Date.now();
+    const deadline = new Date(currentGame.deadline_at).getTime();
+    if (now <= deadline) return;
+
+    const t = textMap[currentLang];
+
+    const loser = players.find(p => p.id === currentGame.current_player_id);
+    if (!loser) return;
+
+    const { data, error } = await supabase
+      .from("mb_games")
+      .update({
+        status: "finished",
+        ended_at: new Date().toISOString()
+      })
+      .eq("id", currentGame.id)
+      .select()
+      .single();
+
+    if (error) return;
+
+    currentGame = data;
+
+    await supabase
+      .from("mb_players")
+      .update({ is_alive: false })
+      .eq("id", loser.id);
+
+    log(pickBoomMsg(loser.name));
+    log(t.logTimeout(loser.name));
+    playExplosionSound();
+
+    await updateScoresAfterRound(loser.id);
+    scheduleUIUpdate();
+  }
+
+  async function restartGame() {
+    if (!currentGame || !isCreator) return;
+    const t = textMap[currentLang];
+
+    // tüm oyuncuları tekrar hayata döndür
+    await supabase
+      .from("mb_players")
+      .update({ is_alive: true })
+      .eq("game_id", currentGame.id);
+
+    const { data, error } = await supabase
+      .from("mb_games")
+      .update({
+        status: "waiting",
+        current_player_id: null,
+        current_question: null,
+        current_answer: null,
+        started_at: null,
+        ended_at: null,
+        deadline_at: null
+      })
+      .eq("id", currentGame.id)
+      .select()
+      .single();
+
+    if (error) {
+      log("Oyun resetlenemedi: " + error.message);
+      return;
+    }
+
+    currentGame = data;
+    log(t.logReset);
+    await fetchPlayers(currentGame.id);
+    scheduleUIUpdate();
+  }
+
+  async function autoRejoinIfPossible() {
+    const params = new URLSearchParams(window.location.search);
+    const gameSlugParam = params.get("game");
+    if (gameSlugParam) {
+      document.getElementById("join-code").value = gameSlugParam.toUpperCase();
+    }
+
+    let saved = null;
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) saved = JSON.parse(raw);
+    } catch (_) {}
+
+    if (!saved?.gameSlug || !saved?.playerId) return;
+
+    const game = await fetchGameBySlug(saved.gameSlug);
+    if (!game || game.status === "finished") {
+      clearLocalState();
+      return;
+    }
+
+    const player = await fetchPlayerById(saved.playerId);
+    if (!player) {
+      clearLocalState();
+      return;
+    }
+
+    currentGame = game;
+    currentPlayer = player;
+    isCreator = !!player.is_creator;
+
+    setupSection.style.display = "none";
+    gameSection.style.display = "block";
+    log(textMap[currentLang].logJoined(game.slug));
+
+    scheduleUIUpdate();
+    attachRealtime(game.id);
+    await fetchPlayers(game.id);
+  }
+
+  // Events
+  document.getElementById("create-game-btn").onclick = createGame;
+  document.getElementById("join-game-btn").onclick = joinGameByCode;
+  document.getElementById("submit-answer-btn").onclick = submitAnswer;
+  answerInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      submitAnswer();
+    }
+  });
+
+  const langButtons = document.querySelectorAll(".lang-btn");
+  langButtons.forEach(btn => {
+    const lang = btn.dataset.lang;
+    if (lang === currentLang) btn.classList.add("active");
+    btn.addEventListener("click", () => {
+      currentLang = lang;
+      localStorage.setItem(LS_LANG, currentLang);
+      langButtons.forEach(b =>
+        b.classList.toggle("active", b.dataset.lang === currentLang)
+      );
+      applyLanguage();
+    });
+  });
+
+  // init
+  applyLanguage();
+  autoRejoinIfPossible();
+</script>
+</body>
+</html>
