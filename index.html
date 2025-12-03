@@ -1302,7 +1302,7 @@
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       updateTimerVisuals();
-      if (isCreator) checkTimeout();
+      checkTimeout();
     }, 200);
   }
 
