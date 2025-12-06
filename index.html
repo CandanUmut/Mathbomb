@@ -216,6 +216,35 @@
       color: #9ca3af;
     }
 
+    .bot-controls {
+      margin-top: 12px;
+      border: 1px dashed rgba(56, 189, 248, 0.5);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(15, 23, 42, 0.6);
+    }
+
+    .bot-controls h4 {
+      margin: 0 0 6px 0;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bot-controls .bot-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .bot-controls .bot-hint {
+      font-size: 0.75rem;
+      color: var(--text-soft);
+      margin: 0;
+    }
+
     .status-banner {
       margin-top: 16px;
       padding: 10px 12px;
@@ -570,6 +599,14 @@
         <div class="col">
           <div class="section-title" id="players-section-title">Oyuncular</div>
           <div class="players" id="players-list"></div>
+          <div class="bot-controls" id="bot-controls" style="display:none;">
+            <h4>🤖 <span id="bot-section-title">Botlar</span></h4>
+            <div class="bot-row">
+              <input id="bot-count" class="small-input" type="number" min="1" max="6" value="1" />
+              <button id="add-bot-btn">➕ <span id="add-bot-btn-text">Bot Ekle</span></button>
+            </div>
+            <p class="bot-hint" id="bot-helper-text">Botlar yüksek doğrulukla otomatik cevap verir.</p>
+          </div>
         </div>
       </div>
 
@@ -650,6 +687,14 @@
       statusRunningPrefix: "Sıra:",
       statusFinished: "Oyun bitti.",
       labelScoreboard: "Skor Tablosu",
+      botTag: "Bot",
+      botSectionTitle: "Botlar",
+      botHelper: "Botlar yüksek doğrulukla otomatik cevap verir. Eklemeler ev sahibi tarafından yapılır.",
+      addBotButton: "Bot Ekle",
+      botLocked: "Oyun sürerken bot eklenemez.",
+      logBotsAdded: count => `${count} bot eklendi.`,
+      logBotThinking: name => `${name} düşünüyor...`,
+      logBotWrong: name => `${name} cevabı kaçırdı, tekrar deniyor.`,
       btnStartGame: "Oyunu Başlat",
       btnPlayAgain: "Tekrar Oyna (Aynı Oda)",
       btnNewRoom: "Yeni Oda",
@@ -697,6 +742,14 @@
       statusRunningPrefix: "Turn:",
       statusFinished: "Game over.",
       labelScoreboard: "Scoreboard",
+      botTag: "Bot",
+      botSectionTitle: "Bots",
+      botHelper: "Bots auto-answer with high accuracy. Only the host can add them.",
+      addBotButton: "Add Bot",
+      botLocked: "Bots cannot be added during an active round.",
+      logBotsAdded: count => `${count} bot(s) added.`,
+      logBotThinking: name => `${name} is thinking...`,
+      logBotWrong: name => `${name} missed the answer, trying again.`,
       btnStartGame: "Start Game",
       btnPlayAgain: "Play Again (Same Room)",
       btnNewRoom: "New Room",
@@ -745,6 +798,9 @@
     document.getElementById("bomb-section-title").textContent = t.bombSectionTitle;
     document.getElementById("btn-submit-text").textContent = t.btnSubmit;
     document.getElementById("scoreboard-title").textContent = t.labelScoreboard;
+    document.getElementById("bot-section-title").textContent = t.botSectionTitle;
+    document.getElementById("bot-helper-text").textContent = t.botHelper;
+    document.getElementById("add-bot-btn-text").textContent = t.addBotButton;
 
     const diffSelect = document.getElementById("difficulty-level");
     diffSelect.querySelector('option[value="normal"]').textContent = t.difficultyNormal;
@@ -992,6 +1048,30 @@
     return generateNormalQuestion();
   }
 
+  function isBotPlayer(player) {
+    if (!player || !player.name) return false;
+    return /^🤖/.test(player.name) || /\bBOT\b/i.test(player.name);
+  }
+
+  function generateBotName() {
+    const pool = ["Nova", "Delta", "Pixel", "Orion", "Flux", "Lambda", "Echo", "Karma", "Rogue", "Sigma"];
+    const name = pool[(botCounter - 1) % pool.length];
+    let candidate = `🤖 ${name}`;
+    const existing = new Set(players.map(p => p.name));
+    while (existing.has(candidate)) {
+      botCounter += 1;
+      candidate = `🤖 ${name} ${botCounter}`;
+    }
+    botCounter += 1;
+    return candidate;
+  }
+
+  function resetBotScheduling() {
+    if (botActionTimeout) clearTimeout(botActionTimeout);
+    botActionTimeout = null;
+    lastBotHandledKey = null;
+  }
+
   function saveLocalState() {
     if (!currentGame || !currentPlayer) return;
     try {
@@ -1014,6 +1094,9 @@
   let pollInterval = null;
   let timerInterval = null;
   let lastSecondShown = null;
+  let botActionTimeout = null;
+  let lastBotHandledKey = null;
+  let botCounter = 1;
 
   // DOM refs
   const setupSection = document.getElementById("setup-section");
@@ -1030,6 +1113,10 @@
   const bombEl = document.getElementById("bomb");
   const bombTimerEl = document.getElementById("bomb-timer");
   const roomDifficultyEl = document.getElementById("room-difficulty");
+  const botControls = document.getElementById("bot-controls");
+  const botCountInput = document.getElementById("bot-count");
+  const addBotBtn = document.getElementById("add-bot-btn");
+  const botHelperText = document.getElementById("bot-helper-text");
 
   let uiUpdatePending = false;
   function scheduleUIUpdate() {
@@ -1096,6 +1183,12 @@
         deadTag.className = "player-tag";
         deadTag.textContent = t.deadTag;
         right.appendChild(deadTag);
+      }
+      if (isBotPlayer(p)) {
+        const botTag = document.createElement("span");
+        botTag.className = "player-tag";
+        botTag.textContent = t.botTag;
+        right.appendChild(botTag);
       }
       const turn = currentGame.current_player_id === p.id && currentGame.status === "running";
       if (turn) {
@@ -1169,6 +1262,15 @@
       sbBody.appendChild(row);
     });
 
+    if (botControls) {
+      const canControlBots = isCreator;
+      const locked = currentGame.status === "running";
+      botControls.style.display = canControlBots ? "block" : "none";
+      botCountInput.disabled = !canControlBots || locked;
+      addBotBtn.disabled = !canControlBots || locked;
+      botHelperText.textContent = locked ? t.botLocked : t.botHelper;
+    }
+
     // buttons in banner
     statusActions.innerHTML = "";
     const tbtn = textMap[currentLang];
@@ -1195,6 +1297,8 @@
       };
       statusActions.appendChild(newRoom);
     }
+
+    maybeTriggerBotTurn();
 
     // answer input enable / disable
     const myTurn = currentGame.status === "running" &&
@@ -1449,6 +1553,38 @@
     await fetchPlayers(game.id);
   }
 
+  async function addBots() {
+    if (!currentGame || !isCreator) return;
+    const t = textMap[currentLang];
+
+    if (currentGame.status === "running") {
+      log(t.botLocked);
+      return;
+    }
+
+    let count = Number(botCountInput.value) || 1;
+    if (count < 1) count = 1;
+    if (count > 6) count = 6;
+    botCountInput.value = count;
+
+    for (let i = 0; i < count; i++) {
+      const name = generateBotName();
+      const { error } = await supabase
+        .from("mb_players")
+        .insert({ game_id: currentGame.id, name, is_creator: false })
+        .select()
+        .single();
+      if (error) {
+        log(`Bot eklenemedi: ${error.message}`);
+        break;
+      }
+    }
+
+    log(t.logBotsAdded(count));
+    await fetchPlayers(currentGame.id);
+    scheduleUIUpdate();
+  }
+
   async function startGame() {
     if (!currentGame || !isCreator) return;
     const t = textMap[currentLang];
@@ -1547,6 +1683,62 @@
       log(t.logQuestion(text));
       scheduleUIUpdate();
     }
+  }
+
+  function maybeTriggerBotTurn() {
+    if (!isCreator) return;
+    if (!currentGame || currentGame.status !== "running") {
+      resetBotScheduling();
+      return;
+    }
+
+    const actingPlayer = players.find(
+      p => p.id === currentGame.current_player_id && p.is_alive
+    );
+    if (!actingPlayer || !isBotPlayer(actingPlayer)) {
+      resetBotScheduling();
+      return;
+    }
+
+    const key = `${currentGame.id}-${currentGame.current_player_id}-${currentGame.deadline_at}`;
+    if (lastBotHandledKey === key || botActionTimeout) return;
+    lastBotHandledKey = key;
+
+    const deadlineMs = currentGame.deadline_at ? new Date(currentGame.deadline_at).getTime() : 0;
+    const now = Date.now();
+    const baseDelay = 600 + Math.random() * 900;
+    const safeDelay = deadlineMs ? Math.max(200, Math.min(baseDelay, deadlineMs - now - 900)) : baseDelay;
+
+    botActionTimeout = setTimeout(() => botAttemptAnswer(actingPlayer), safeDelay);
+  }
+
+  async function botAttemptAnswer(botPlayer, forceCorrect = false) {
+    botActionTimeout = null;
+    if (!currentGame || currentGame.status !== "running") return;
+    if (!botPlayer || !botPlayer.is_alive) return;
+    if (currentGame.current_player_id !== botPlayer.id) return;
+
+    const deadline = currentGame.deadline_at ? new Date(currentGame.deadline_at).getTime() : 0;
+    if (deadline && Date.now() > deadline) return;
+
+    const aliveTargets = players.filter(p => p.is_alive && p.id !== botPlayer.id);
+    if (aliveTargets.length === 0) return;
+    const target = aliveTargets[Math.floor(Math.random() * aliveTargets.length)];
+
+    const knowsAnswer = forceCorrect || Math.random() < 0.9;
+    const t = textMap[currentLang];
+    log(t.logBotThinking(botPlayer.name));
+
+    if (!knowsAnswer) {
+      log(t.logBotWrong(botPlayer.name));
+      const retryDelay = deadline ? Math.max(300, Math.min(900, deadline - Date.now() - 400)) : 700;
+      if (retryDelay > 0) {
+        botActionTimeout = setTimeout(() => botAttemptAnswer(botPlayer, true), retryDelay);
+      }
+      return;
+    }
+
+    await handleCorrectAnswer(target.id);
   }
 
   async function submitAnswer() {
@@ -1701,6 +1893,7 @@
   document.getElementById("create-game-btn").onclick = createGame;
   document.getElementById("join-game-btn").onclick = joinGameByCode;
   document.getElementById("submit-answer-btn").onclick = submitAnswer;
+  addBotBtn.onclick = addBots;
   answerInput.addEventListener("keydown", e => {
     if (e.key === "Enter") {
       submitAnswer();
